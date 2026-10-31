@@ -54,10 +54,20 @@ e, depois de construir, verifica que todo byte alterado pertence a um patch e qu
 
 `python3 tests/run_tests.py --musashi /caminho/Musashi --original "<sua ROM>.gen"` (precisa de `gcc` e de um checkout do [Musashi](https://github.com/kstenerud/Musashi)).
 Monta um simulador 68000 mínimo (`tests/sim/mgsim.c`, VDP/SRAM/Z80 simplificados) e roda a ROM original e a corrigida nos mesmos cenários: perda e restauração de itens/rank no
-save→reboot→load, slots independentes, Z80 que nunca responde (a original trava, a corrigida segue), paridade com Z80 normal e ausência de acessos ímpares/RAM não inicializada. Resultado atual: 7/7.
+save→reboot→load, slots independentes, Z80 que nunca responde (a original trava, a corrigida segue), paridade com Z80 normal e ausência de acessos ímpares/RAM não inicializada, e regras de hardware real (ver abaixo). Resultado atual: 9/9.
 
 Verificado também (manualmente, sob xvfb): BlastEm (regiões U, J e E/PAL, RAM inicial aleatória), RetroArch com o core BlastEm e mednafen 1.29 iniciam e chegam ao jogo; o áudio do BlastEm é equivalente
 na original e na corrigida; no RetroArch, itens (Ration, Card 1, binóculo) foram gravados no `.srm` e restaurados pelo LOAD.
+
+## Compatibilidade com hardware real (auditoria estática e simulada)
+
+Vale para a ROM corrigida (a original passa nas mesmas verificações). Isto reduz risco, **não** substitui teste em console:
+
+- Cabeçalho: `SEGA MEGA DRIVE`, regiões `JUE`, checksum válido, SRAM `RA F8 20` em `0x200001–0x20FFFF` (bytes ímpares, bateria). O mapper `A130F1` só liga a SRAM durante SAVE/LOAD.
+- TMSS: o boot lê `0xA10001` e escreve `SEGA` em `0xA14000` quando há TMSS (0x9A8), antes de qualquer acesso ao VDP. No simulador esse ramo não é exercitado (ele devolve versão 0).
+- Barramento do Z80: o simulador modela BUSREQ/BUSACK. Em 3000 quadros nenhum acesso do 68000 à RAM do Z80 ou ao YM2612 ocorre sem o barramento, nem com o Z80 em reset, e nenhum pulso de reset é curto demais.
+- DMA ROM→VRAM (origens `0x140100` e `0x140F00`): nenhuma cruza o limite de 128 KB. Sem acessos ímpares e sem leitura de RAM não inicializada.
+- Não coberto: temporização de clones (FPGA/SoC, p. ex. consoles retrô recentes), cadência de leitura do controle de 6 botões, PAL/50 Hz no aparelho, timing real do handshake com o Z80. O jogo usa `0xA10001` só para o TMSS; não há ramo específico de região/clock.
 
 ## Limitações
 
@@ -109,7 +119,7 @@ Inglebard, Toni Galvez и 5customs), рассчитанные на **реаль�
   Новая процедура (`patches/sync_inventory.s`) сначала копирует: звание (a5+0x235E), патроны (a5+0x25AC, 80 Б), предметы+флаги (a5+0x277C, 144 Б) и оружие+флаги
   (a5+0x274C, 40 Б). Позиция/комната по-прежнему берутся из чекпоинта (`a5 = 0xFF026C`).
 - **Z80:** 12 циклов ожидания BUSACK (0x21DAA, 0x21DDA, 0x21E90, 0x21F10, 0x21FBA, 0x2237E, 0x220EC, 0x223FE, 0x2248A, 0x224F2, 0x2255A, 0x22AB6) ждут ~3,6 мс; два
-  цикла флага готовности (0xFD14, 0x23980) — ~0,5 с. По тайм-ауту выставляется `Z80_DEAD` (`0xFFFC00`), и следующие ожидания делают одно чтение; если Z80 снова отвечает, флаг сбрасывается.
+  цикла флага готовности (0xFD14, 0x23980) - ~0,5 с. По тайм-ауту выставляется `Z80_DEAD` (`0xFFFC00`), и следующие ожидания делают одно чтение; если Z80 снова отвечает, флаг сбрасывается.
   Игра продолжает работу без звука вместо зависания. При исправном Z80 поведение идентично оригиналу (`patches/z80_timeouts.s`).
 - **RAM:** звуковой драйвер читает `0xFF86AA` и `0xFF85D0` без инициализации. Анализ (Ghidra 12.1.3 через REA) показывает, что поток меняется только при мусоре 1–5, поэтому это
   **маловероятная** причина зависания; полная очистка дешёвая и оставлена.
@@ -130,14 +140,24 @@ Inglebard, Toni Galvez и 5customs), рассчитанные на **реаль�
 `python3 tests/run_tests.py --musashi /путь/Musashi --original "<ваш ROM>.gen"` (нужны `gcc` и клон [Musashi](https://github.com/kstenerud/Musashi)).
 Собирается минимальный симулятор 68000 (`tests/sim/mgsim.c`, упрощённые VDP/SRAM/Z80), и оригинальный и исправленный ROM прогоняются по одним сценариям: потеря и восстановление
 предметов/звания при сохранении→перезагрузке→загрузке, независимые слоты, Z80, который никогда не отвечает (оригинал виснет, исправленный продолжает), совпадение с оригиналом при
-исправном Z80 и отсутствие нечётных обращений/неинициализированной RAM. Текущий результат: 7/7.
+исправном Z80 и отсутствие нечётных обращений/неинициализированной RAM и правила реального железа (см. ниже). Текущий результат: 9/9.
 
 Также проверено (вручную, под xvfb): BlastEm (регионы U, J и E/PAL, случайная начальная RAM), RetroArch с ядром BlastEm и mednafen 1.29 запускаются и доходят до игры; звук BlastEm
 эквивалентен у оригинала и исправленного ROM; в RetroArch предметы (Ration, Card 1, бинокль) записались в `.srm` и восстановились через LOAD.
 
+## Совместимость с реальным железом (статический и симулированный аудит)
+
+Относится к исправленному ROM (оригинал проходит те же проверки). Это снижает риск, но **не заменяет** тест на консоли:
+
+- Заголовок: `SEGA MEGA DRIVE`, регионы `JUE`, корректная контрольная сумма, SRAM `RA F8 20` в `0x200001–0x20FFFF` (нечётные байты, батарея). Маппер `A130F1` включает SRAM только на время SAVE/LOAD.
+- TMSS: при загрузке читается `0xA10001`, и при наличии TMSS в `0xA14000` пишется `SEGA` (0x9A8) до любого обращения к VDP. В симуляторе эта ветка не исполняется (он возвращает версию 0).
+- Шина Z80: симулятор моделирует BUSREQ/BUSACK. За 3000 кадров нет обращений 68000 к ОЗУ Z80 или YM2612 без шины или при сбросе Z80, и нет слишком коротких импульсов сброса.
+- DMA ROM→VRAM (источники `0x140100` и `0x140F00`): ни один не пересекает границу 128 КБ. Нет нечётных обращений и чтения неинициализированной RAM.
+- Не покрыто: тайминги клонов (FPGA/SoC, например современные ретро-консоли), опрос 6-кнопочного геймпада, PAL/50 Гц на устройстве, реальные тайминги рукопожатия с Z80. Игра использует `0xA10001` только для TMSS; веток по региону/частоте нет.
+
 ## Ограничения
 
-- **Реальный картридж не тестировался.** Зависание на железе не воспроизведено ни в одном эмуляторе; тайм-ауты Z80 — лучшая гипотеза, а не доказательство.
+- **Реальный картридж не тестировался.** Зависание на железе не воспроизведено ни в одном эмуляторе; тайм-ауты Z80 - лучшая гипотеза, а не доказательство.
 - Сохранение через меню паузы не автоматизировано; выполнено вручную в RetroArch.
 - Цикл в 0x1019A (ждёт, пока Z80 освободит `0xA00160` бит 0) не изменён.
 - Продолжение после смерти (0x3A92 → 0x4AD4) по-прежнему восстанавливает предметы с последнего чекпоинта.
@@ -205,10 +225,20 @@ and after building verifies that every changed byte belongs to a patch and that 
 
 `python3 tests/run_tests.py --musashi /path/to/Musashi --original "<your ROM>.gen"` (needs `gcc` and a checkout of [Musashi](https://github.com/kstenerud/Musashi)).
 It builds a minimal 68000 simulator (`tests/sim/mgsim.c`, simplified VDP/SRAM/Z80) and runs the original and the fixed ROM through the same scenarios: loss and restoration of items/rank on
-save→reboot→load, independent slots, a Z80 that never answers (the original hangs, the fixed ROM carries on), parity with a healthy Z80, and no odd-address accesses/uninitialised RAM. Current result: 7/7.
+save→reboot→load, independent slots, a Z80 that never answers (the original hangs, the fixed ROM carries on), parity with a healthy Z80, and no odd-address accesses/uninitialised RAM, and real-hardware rules (see below). Current result: 9/9.
 
 Also checked (manually, under xvfb): BlastEm (regions U, J and E/PAL, random initial RAM), RetroArch with the BlastEm core and mednafen 1.29 boot and reach gameplay; BlastEm's audio is equivalent
 for the original and the fixed ROM; in RetroArch, items (Ration, Card 1, binoculars) were written to the `.srm` and restored by LOAD.
+
+## Real-hardware compatibility (static and simulated audit)
+
+Applies to the fixed ROM (the original passes the same checks). This lowers risk; it does **not** replace testing on a console:
+
+- Header: `SEGA MEGA DRIVE`, regions `JUE`, valid checksum, SRAM `RA F8 20` at `0x200001–0x20FFFF` (odd bytes, battery). The `A130F1` mapper maps SRAM only during SAVE/LOAD.
+- TMSS: boot reads `0xA10001` and writes `SEGA` to `0xA14000` when a TMSS exists (0x9A8), before any VDP access. The simulator does not exercise this branch (it returns version 0).
+- Z80 bus: the simulator models BUSREQ/BUSACK. Over 3000 frames the 68000 never touches Z80 RAM or the YM2612 without owning the bus or while the Z80 is in reset, and no reset pulse is too short.
+- ROM→VRAM DMA (sources `0x140100` and `0x140F00`): none crosses a 128 KB boundary. No odd-address accesses, no uninitialised RAM reads.
+- Not covered: clone timing (FPGA/SoC, e.g. recent retro consoles), 6-button pad polling cadence, PAL/50 Hz on a real unit, real Z80 handshake timing. The game reads `0xA10001` only for TMSS; there is no region/clock-specific branch.
 
 ## Limitations
 

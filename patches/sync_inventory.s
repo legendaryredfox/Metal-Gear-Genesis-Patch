@@ -15,12 +15,12 @@ sync_inventory:
         move.w  #79,%d7
 1:      move.b  %a0@+,%a2@+
         dbf     %d7,1b
-        lea     %a5@(10060),%a0          | equipment+flags live 0x274C (40 B) -> snap 320
+        lea     %a5@(10060),%a0          | weapons+flags   live 0x274C (40 B) -> snap 320
         lea     %a1@(320),%a2
         move.w  #39,%d7
 2:      move.b  %a0@+,%a2@+
         dbf     %d7,2b
-        lea     %a5@(10108),%a0          | weapons+flags   live 0x277C (144 B) -> snap 360
+        lea     %a5@(10108),%a0          | items+flags     live 0x277C (144 B) -> snap 360
         lea     %a1@(360),%a2
         move.w  #143,%d7
 3:      move.b  %a0@+,%a2@+

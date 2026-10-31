@@ -16,7 +16,10 @@
  *   peek ADDR LEN       print work RAM bytes
  *   call ADDR           call a 68000 routine and return (registers saved/restored)
  *   sram FILE           dump the SRAM (64 KB, odd bytes used) to FILE
- * Log lines flag odd-address word/long accesses and reads of work RAM never written.
+ * Log lines flag odd-address word/long accesses, reads of work RAM never written and real-hardware rule
+ * violations (prefix HWVIOL): 68000 access to Z80 RAM/YM2612 without holding the Z80 bus (BUSREQ) or while the
+ * Z80 is in reset, Z80 reset pulses that are too short, and ROM->VRAM DMA that crosses a 128 KB boundary.
+ * BUSACK is modelled: A11100 reads as "Z80 owns the bus" until BUSREQ is written.
  * Copyright for Musashi: Karl Stenerud (MIT). This file is only glue code.
  */
 #include <stdio.h>
@@ -33,11 +36,23 @@ static int padsel1=0;
 static long vcycle=0;
 static int traceUninit=1, verbose=0;
 FILE *logf;
-static int callDone=0; void instr_hook(unsigned pc){ curpc=pc; if(pc==0x3FFFF0){ callDone=1; m68k_end_timeslice(); } }
+static long icount=0; static int busreq=0, zrst=0; static long rstAssertAt=-1; static int zramWasWritten=0;
+static int callDone=0; void instr_hook(unsigned pc){ icount++; curpc=pc; if(pc==0x3FFFF0){ callDone=1; m68k_end_timeslice(); } }
 static void L(const char*fmt,...);
 #include <stdarg.h>
 static void L(const char*fmt,...){va_list a;va_start(a,fmt);fprintf(logf,"[f%ld pc=%06X] ",frame,curpc);vfprintf(logf,fmt,a);fputc('\n',logf);va_end(a);}
-static int vdpAccess=0;
+static int vdpAccess=0; static unsigned vreg[32]; static int vpend=0; static unsigned vfirst=0;
+static void vdpcmd2(unsigned hi,unsigned lo){ if((lo&0x80)&&((hi>>14)!=2)){ unsigned r23=vreg[23]; unsigned len=(vreg[20]<<8)|vreg[19];
+  if((r23&0xC0)==0xC0) { if(getenv("DMALOG")) L("DMA COPY len=%u",len); }
+  else if(r23&0x80) { if(getenv("DMALOG")) L("DMA FILL len=%u",len); }
+  else { unsigned src=(((r23&0x7F)<<16)|(vreg[22]<<8)|vreg[21])<<1; unsigned l2=len?len:0x10000; int cross=((src&0x1FFFF)+l2*2)>0x20000; if(cross) L("HWVIOL DMA from %06X len=%u words crosses a 128 KB boundary",src,l2); else if(getenv("DMALOG")) L("DMA src=%06X len=%u words",src,l2); } } }
+static void vdpwr(unsigned v,int sz){ if(sz==4){ unsigned hi=v>>16, lo=v&0xFFFF; if((hi>>14)==2){ vreg[(hi>>8)&31]=hi&0xFF; vpend=0; if((lo>>14)==2) vreg[(lo>>8)&31]=lo&0xFF; else { vfirst=lo; vpend=1; } } else vdpcmd2(hi,lo); }
+  else if(sz==2){ if(vpend){ vdpcmd2(vfirst,v); vpend=0; } else if((v>>14)==2) vreg[(v>>8)&31]=v&0xFF; else { vfirst=v; vpend=1; } } }
+
+#include <stdarg.h>
+static void V(const char*kind,u32 a,int w){ static int n=0; n++; if(n<=400) L("HWVIOL %s %s @%06X",kind,w?"W":"R",a); }
+static void chkz80(u32 a,int w){ if(!busreq) V("Z80/YM access without BUSREQ",a,w); else if(zrst==0) V("Z80/YM access while Z80 in RESET",a,w); }
+
 u32 rd(u32 a,int sz){
   a&=0xFFFFFF;
   if(sz>1 && (a&1)) { L("ODD read%d @%06X",sz*8,a); }
@@ -49,12 +64,13 @@ u32 rd(u32 a,int sz){
     if(r==2||r==3){ // data port 1
       u8 v = padsel1? (0x40|(pad1&0x3F)) : (0x00|((pad1>>6)&0x30)|(pad1&3)); return v;}
     return 0; }
-  if(a>=0xA11100&&a<0xA11102){ if(getenv("Z80DEAD")) return sz==1?1:0x0100; return 0; }
+  if(a>=0xA11100&&a<0xA11102){ int own=!busreq || getenv("Z80DEAD"); if(sz==1) return (a==0xA11100)? (own?1:0):0; return own?0x0100:0; }
+  if(a>=0xA11200&&a<0xA11202){ return 0; }
   if(a>=0xC00000&&a<0xC00020){ u32 r=a&0x1F;
     if(r>=4&&r<8){ vcycle++; int vb = ((vcycle/50)&1)?0x08:0; return 0x3400|vb|0x200; }
     if(r>=8&&r<16){ static int hv=0; hv+=3; return hv&0xFFFF; }
     return 0; }
-  if(a>=0xA00000&&a<0xA10000){ if(a==0xA00102) return getenv("Z80DEAD")?0:0x80; return 0;} // z80 stub: ready flag
+  if(a>=0xA00000&&a<0xA10000){ chkz80(a,0); if(a==0xA00102) return getenv("Z80DEAD")?0:0x80; return 0;} // z80 stub: ready flag
   L("read from unmapped %06X sz%d",a,sz); return 0;
 }
 void wr(u32 a,u32 v,int sz){
@@ -67,9 +83,12 @@ void wr(u32 a,u32 v,int sz){
   if(a>=0xE00000){ for(int i=0;i<sz;i++){ u32 p=(a+i)&0xFFFF; ram[p]=(v>>(8*(sz-1-i)))&0xFF; ramInit[p]=1;} return; }
   if(a>=0xA130F0&&a<0xA13100){ if((a&1)){ if((a&0xF)==1){ sramMap=v&1; sramWriteProt=(v>>1)&1; L("MAPPER A130F1 <= %02X",v&0xFF);} else L("mapper %06X <= %X",a,v);} return; }
   if(a>=0xA10000&&a<0xA10020){ u32 r=a&0x1F; if(r==3){padsel1=(v>>6)&1;} return; }
+  if(a>=0xA11100&&a<0xA11102){ int nv=(sz==1? (a&1?0:(v&1)) : ((v>>8)&1)); if(sz==1&&a==0xA11100) nv=v&1; busreq=nv; return; }
+  if(a>=0xA11200&&a<0xA11202){ int nv=(sz==1? (v&1) : ((v>>8)&1)); if(!nv){ rstAssertAt=icount; } else { if(rstAssertAt>=0 && icount-rstAssertAt<40) L("HWVIOL Z80 reset pulse short: %ld insns",icount-rstAssertAt); rstAssertAt=-1; } zrst=nv; return; }
   if(a>=0xA11100&&a<0xA11300) return;
   if(a>=0xA14000&&a<0xA14004) return;
-  if(a>=0xA00000&&a<0xA10000) return;
+  if(a>=0xA00000&&a<0xA10000){ chkz80(a,1); return; }
+  if(a>=0xC00004&&a<0xC00008){ vdpwr(v,sz); return; }
   if(a>=0xC00000&&a<0xC00020) return;
   L("write to unmapped %06X=%X sz%d",a,v,sz);
 }

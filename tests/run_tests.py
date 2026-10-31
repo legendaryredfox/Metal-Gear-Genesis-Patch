@@ -166,6 +166,14 @@ def main() -> int:
     bad = [l for l in log if "ODD" in l or "UNINIT" in l]
     check("fixed ROM: no odd-address access, no uninitialised RAM read", not bad, "; ".join(bad[:2]))
 
+    # 6. real-hardware rules (bus ownership, Z80 reset pulse, DMA 128 KB boundary), both ROMs, two pad inputs
+    for label, rom in (("original", orig), ("fixed", fixed)):
+        viol = []
+        for tap in ("80", "10"):
+            viol += [l.split("]", 1)[1].strip() for l in sim.run(rom, "run 3000\n", TAP=tap, seed=4) if "HWVIOL" in l]
+        check(f"{label} ROM: no Z80/YM access without BUSREQ, no short Z80 reset, no DMA across 128 KB",
+              not viol, "; ".join(sorted(set(viol))[:2]))
+
     failed = [r for r in results if not r[1]]
     print(f"\n{len(results) - len(failed)}/{len(results)} passed")
     shutil.rmtree(work, ignore_errors=True)
