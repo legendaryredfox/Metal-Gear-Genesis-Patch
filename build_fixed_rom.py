@@ -17,6 +17,9 @@ Needs only the Python standard library. Re-assembling the patch routines needs
 binutils for m68k (apt: binutils-m68k-linux-gnu); the committed .bin/.sym files
 are used as-is when they are up to date.
 
+The same ROM is written twice, as .gen and as .bin (flashcart menus often list
+only one of the two), with identical contents.
+
 Usage:
   build_fixed_rom.py [SOURCE] [-o OUTPUT] [--rebuild-patches] [--force]
 """
@@ -172,12 +175,19 @@ def verify(source: bytes, built: bytes, touched: list[tuple[int, int]]) -> int:
 
 # --------------------------------------------------------------------------- main
 
+def output_paths(output: Path) -> list[Path]:
+    """The requested output plus its twin with the other ROM extension (.gen <-> .bin)."""
+    twin = {".gen": ".bin", ".bin": ".gen"}.get(output.suffix.lower())
+    return [output] + ([output.with_suffix(twin)] if twin else [])
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="Build the fixed Metal Gear MD v1.2 ROM.")
     ap.add_argument("source", nargs="?", type=Path,
                     help=f"your original v1.2 ROM (default: '{ORIGINAL_NAME}' in the current directory or next to this script)")
     ap.add_argument("-o", "--output", type=Path,
-                    help=f"output ROM (default: '{FIXED_NAME}' next to the source ROM)")
+                    help=f"output ROM (default: '{FIXED_NAME}' next to the source ROM); "
+                         "a twin with the other extension (.gen/.bin) is written too")
     ap.add_argument("--rebuild-patches", action="store_true", help="re-assemble patches/*.s even if the .bin files look current")
     ap.add_argument("--force", action="store_true", help="build even if the source SHA-256 is not the known v1.2 dump")
     args = ap.parse_args()
@@ -192,7 +202,8 @@ def main() -> int:
             raise BuildError(f"source ROM not found: {args.source}")
         if args.output is None:
             args.output = args.source.resolve().parent / FIXED_NAME
-        if args.source.resolve() == args.output.resolve():
+        outputs = output_paths(args.output)
+        if args.source.resolve() in (o.resolve() for o in outputs):
             raise BuildError("output would overwrite the source ROM")
         source = args.source.read_bytes()
         if len(source) != ROM_SIZE:
@@ -208,8 +219,9 @@ def main() -> int:
         print(f"error: {exc}", file=sys.stderr)
         return 1
 
-    args.output.write_bytes(rom)
-    print(f"wrote {args.output}")
+    for out in outputs:
+        out.write_bytes(rom)
+        print(f"wrote {out}")
     print(f"  {changed} bytes changed, header checksum {int.from_bytes(rom[0x18E:0x190], 'big'):#06x}")
     print(f"  sha256 {hashlib.sha256(rom).hexdigest()}")
     return 0

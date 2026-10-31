@@ -42,7 +42,7 @@ Total: 336 bytes alterados. O formato do SRAM não muda, então saves da ROM ori
 ## Como usar
 
 1. Coloque sua ROM `Metal Gear (World) (v1.2) (Aftermarket) (Unl).gen` na pasta do projeto (ou passe o caminho).
-2. `python3 build_fixed_rom.py`  → gera `... [fixed].gen` ao lado da original.
+2. `python3 build_fixed_rom.py`  → gera `... [fixed].gen` e `... [fixed].bin` (conteúdo idêntico) ao lado da original. Use o `.bin` ou o `.gen`, conforme o menu do seu flashcart.
 
 Opções: `build_fixed_rom.py [ROM] [-o SAÍDA] [--rebuild-patches] [--force]`. O script confere o SHA-256 da ROM e os bytes originais de cada patch (só funciona na v1.2 intacta)
 e, depois de construir, verifica que todo byte alterado pertence a um patch e que o checksum do header está certo.
@@ -64,14 +64,14 @@ na original e na corrigida; no RetroArch, itens (Ration, Card 1, binóculo) fora
 Vale para a ROM corrigida (a original passa nas mesmas verificações). Isto reduz risco, **não** substitui teste em console:
 
 - Cabeçalho: `SEGA MEGA DRIVE`, regiões `JUE`, checksum válido, SRAM `RA F8 20` em `0x200001–0x20FFFF` (bytes ímpares, bateria). O mapper `A130F1` só liga a SRAM durante SAVE/LOAD.
-- TMSS: o boot lê `0xA10001` e escreve `SEGA` em `0xA14000` quando há TMSS (0x9A8), antes de qualquer acesso ao VDP. No simulador esse ramo não é exercitado (ele devolve versão 0).
+- TMSS: o boot lê `0xA10001` e escreve `SEGA` em `0xA14000` quando há TMSS (0x9A8), antes de qualquer acesso ao VDP. No simulador deste repositório esse ramo não é exercitado (ele devolve versão 0); no oráculo do projeto `decomp` (versão `A1`) ele roda limpo nas duas ROMs.
 - Barramento do Z80: o simulador modela BUSREQ/BUSACK. Em 3000 quadros nenhum acesso do 68000 à RAM do Z80 ou ao YM2612 ocorre sem o barramento, nem com o Z80 em reset, e nenhum pulso de reset é curto demais.
 - DMA ROM→VRAM (origens `0x140100` e `0x140F00`): nenhuma cruza o limite de 128 KB. Sem acessos ímpares e sem leitura de RAM não inicializada.
 - Não coberto: temporização de clones (FPGA/SoC, p. ex. consoles retrô recentes), cadência de leitura do controle de 6 botões, PAL/50 Hz no aparelho, timing real do handshake com o Z80. O jogo usa `0xA10001` só para o TMSS; não há ramo específico de região/clock.
 
 ## Limitações
 
-- **Cartucho real não testado.** O travamento em hardware não foi reproduzido em nenhum emulador; os timeouts do Z80 são a melhor hipótese, não uma prova.
+- **Testada em flashcart:** a ROM corrigida (`.bin`) roda e funciona como esperado. Cartucho repro com bateria e consoles clone não foram testados. O travamento original não foi reproduzido em nenhum emulador; os timeouts do Z80 são a melhor hipótese, não uma prova.
 - Salvar pelo menu de pause não foi automatizado; foi feito à mão no RetroArch.
 - O laço em 0x1019A (espera o Z80 liberar `0xA00160` bit 0) não foi alterado.
 - Continuar depois de morrer (0x3A92 → 0x4AD4) ainda restaura itens do último checkpoint.
@@ -127,7 +127,7 @@ Inglebard, Toni Galvez и 5customs), рассчитанные на **реаль�
 ## Как использовать
 
 1. Положите свой ROM `Metal Gear (World) (v1.2) (Aftermarket) (Unl).gen` в папку проекта (или укажите путь).
-2. `python3 build_fixed_rom.py`  → создаёт `... [fixed].gen` рядом с оригиналом.
+2. `python3 build_fixed_rom.py`  → создаёт `... [fixed].gen` и `... [fixed].bin` (одинаковое содержимое) рядом с оригиналом. Используйте `.bin` или `.gen`, в зависимости от меню вашего флеш-картриджа.
 
 Опции: `build_fixed_rom.py [ROM] [-o ВЫХОД] [--rebuild-patches] [--force]`. Скрипт проверяет SHA-256 ROM и исходные байты каждого патча (работает только на нетронутой v1.2),
 а после сборки проверяет, что каждый изменённый байт принадлежит патчу и контрольная сумма заголовка верна.
@@ -150,14 +150,14 @@ Inglebard, Toni Galvez и 5customs), рассчитанные на **реаль�
 Относится к исправленному ROM (оригинал проходит те же проверки). Это снижает риск, но **не заменяет** тест на консоли:
 
 - Заголовок: `SEGA MEGA DRIVE`, регионы `JUE`, корректная контрольная сумма, SRAM `RA F8 20` в `0x200001–0x20FFFF` (нечётные байты, батарея). Маппер `A130F1` включает SRAM только на время SAVE/LOAD.
-- TMSS: при загрузке читается `0xA10001`, и при наличии TMSS в `0xA14000` пишется `SEGA` (0x9A8) до любого обращения к VDP. В симуляторе эта ветка не исполняется (он возвращает версию 0).
+- TMSS: при загрузке читается `0xA10001`, и при наличии TMSS в `0xA14000` пишется `SEGA` (0x9A8) до любого обращения к VDP. В симуляторе этого репозитория эта ветка не исполняется (он возвращает версию 0); в оракуле проекта `decomp` (версия `A1`) она проходит чисто на обоих ROM.
 - Шина Z80: симулятор моделирует BUSREQ/BUSACK. За 3000 кадров нет обращений 68000 к ОЗУ Z80 или YM2612 без шины или при сбросе Z80, и нет слишком коротких импульсов сброса.
 - DMA ROM→VRAM (источники `0x140100` и `0x140F00`): ни один не пересекает границу 128 КБ. Нет нечётных обращений и чтения неинициализированной RAM.
 - Не покрыто: тайминги клонов (FPGA/SoC, например современные ретро-консоли), опрос 6-кнопочного геймпада, PAL/50 Гц на устройстве, реальные тайминги рукопожатия с Z80. Игра использует `0xA10001` только для TMSS; веток по региону/частоте нет.
 
 ## Ограничения
 
-- **Реальный картридж не тестировался.** Зависание на железе не воспроизведено ни в одном эмуляторе; тайм-ауты Z80 - лучшая гипотеза, а не доказательство.
+- **Проверено на флеш-картридже:** исправленный ROM (`.bin`) запускается и работает как ожидалось. Репро-картридж с батарейкой и клоны консоли не тестировались. Исходное зависание не воспроизведено ни в одном эмуляторе; тайм-ауты Z80 - лучшая гипотеза, а не доказательство.
 - Сохранение через меню паузы не автоматизировано; выполнено вручную в RetroArch.
 - Цикл в 0x1019A (ждёт, пока Z80 освободит `0xA00160` бит 0) не изменён.
 - Продолжение после смерти (0x3A92 → 0x4AD4) по-прежнему восстанавливает предметы с последнего чекпоинта.
@@ -213,7 +213,7 @@ Inglebard, Toni Galvez and 5customs), aimed at **real hardware** (battery-backed
 ## Usage
 
 1. Put your `Metal Gear (World) (v1.2) (Aftermarket) (Unl).gen` in the project folder (or pass its path).
-2. `python3 build_fixed_rom.py`  → writes `... [fixed].gen` next to the original.
+2. `python3 build_fixed_rom.py`  → writes `... [fixed].gen` and `... [fixed].bin` (identical contents) next to the original. Use whichever your flashcart menu lists.
 
 Options: `build_fixed_rom.py [ROM] [-o OUTPUT] [--rebuild-patches] [--force]`. The script checks the ROM's SHA-256 and the original bytes of every patch (so it only works on an untouched v1.2),
 and after building verifies that every changed byte belongs to a patch and that the header checksum is valid.
@@ -235,14 +235,14 @@ for the original and the fixed ROM; in RetroArch, items (Ration, Card 1, binocul
 Applies to the fixed ROM (the original passes the same checks). This lowers risk; it does **not** replace testing on a console:
 
 - Header: `SEGA MEGA DRIVE`, regions `JUE`, valid checksum, SRAM `RA F8 20` at `0x200001–0x20FFFF` (odd bytes, battery). The `A130F1` mapper maps SRAM only during SAVE/LOAD.
-- TMSS: boot reads `0xA10001` and writes `SEGA` to `0xA14000` when a TMSS exists (0x9A8), before any VDP access. The simulator does not exercise this branch (it returns version 0).
+- TMSS: boot reads `0xA10001` and writes `SEGA` to `0xA14000` when a TMSS exists (0x9A8), before any VDP access. This repository's simulator does not exercise that branch (it returns version 0); the `decomp` project's oracle (version `A1`) runs it clean on both ROMs.
 - Z80 bus: the simulator models BUSREQ/BUSACK. Over 3000 frames the 68000 never touches Z80 RAM or the YM2612 without owning the bus or while the Z80 is in reset, and no reset pulse is too short.
 - ROM→VRAM DMA (sources `0x140100` and `0x140F00`): none crosses a 128 KB boundary. No odd-address accesses, no uninitialised RAM reads.
 - Not covered: clone timing (FPGA/SoC, e.g. recent retro consoles), 6-button pad polling cadence, PAL/50 Hz on a real unit, real Z80 handshake timing. The game reads `0xA10001` only for TMSS; there is no region/clock-specific branch.
 
 ## Limitations
 
-- **Real cartridge not tested.** The hardware hang was not reproduced in any emulator; the Z80 timeouts are the best hypothesis, not a proof.
+- **Tested on a flashcart:** the fixed ROM (`.bin`) runs and works as expected. A battery-backed repro cart and clone consoles were not tested. The original hang was not reproduced in any emulator; the Z80 timeouts are the best hypothesis, not a proof.
 - Saving through the pause menu was not automated; it was done by hand in RetroArch.
 - The loop at 0x1019A (waits for the Z80 to release `0xA00160` bit 0) was not changed.
 - Continuing after death (0x3A92 → 0x4AD4) still restores items from the last checkpoint.
