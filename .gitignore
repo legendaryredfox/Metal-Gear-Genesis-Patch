@@ -1,0 +1,9 @@
+# ROMs are never committed: bring your own dump
+*.gen
+*.md.bak
+*.bin
+!patches/*.bin
+*.zip
+*.srm
+__pycache__/
+.cache/

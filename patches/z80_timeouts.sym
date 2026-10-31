@@ -1,0 +1,6 @@
+__bss_start 001bf99c
+_edata 001bf99a
+_end 001bf99c
+flagwait_23980 001bd96e
+flagwait_fd14 001bd942
+wait_busack 001bd900
