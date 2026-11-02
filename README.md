@@ -27,6 +27,13 @@ O programa reconhece a versão pelo SHA-256, confere os bytes originais de cada 
 
 **Linha de comando:** `java -jar MetalGearPatcher-*.jar --cli ROM [-o SAÍDA] [--only save,z80,ram] [--force] [--check]`. Código de saída 0 = ok, 1 = erro, 2 = uso incorreto. `--force` aceita um dump modificado (hash diferente) se todos os bytes verificados ainda baterem.
 
+<p align="center">
+  <img src="docs/img/pt-main.png" alt="Interface em português" width="420">
+  <img src="docs/img/pt-result.png" alt="Interface em português" width="420">
+</p>
+
+<sub>Capturas de tela (feitas sob Xvfb): ROM v1.1 reconhecida e resultado depois de aplicar as correções.</sub>
+
 ## O que muda
 
 **v1.2** (336 bytes alterados):
@@ -106,12 +113,18 @@ Vale para a v1.2 corrigida (a original passa nas mesmas verificações); a v1.1 
 
 ```
 docs/                  análise da v1.1 (v1.1-analise.md, v1.1-analysis.md)
+docs/img/              capturas de tela da interface
 app/                   programa Kotlin Multiplatform (commonMain: motor, estado, tela; desktopMain: janela e arquivos)
   .../core/            RomPatcher, RomProfiles (tabelas de patch), PatchBlobs (gerado), Sha256
 patches/               rotinas 68000 (.s), binários montados (.bin/.sym) e build_patches.sh
 tests/run_tests.py     testes de comportamento da ROM;  tests/sim/mgsim.c  simulador mínimo (Musashi)
 .github/workflows/     CI (Linux, macOS, Windows)
+LICENSE                PolyForm Noncommercial 1.0.0
 ```
+
+## Licença
+
+[PolyForm Noncommercial 1.0.0](LICENSE): uso, cópia e modificação livres para fins **não comerciais** (pessoal, estudo, hobby, preservação, organizações sem fins lucrativos). Uso comercial exige autorização do autor. O texto completo está em [LICENSE](LICENSE). Por causa da restrição comercial, não é uma licença de código aberto no sentido da OSI. A licença cobre só o código deste repositório; o jogo e as ROMs pertencem aos seus donos.
 
 ## Apoie o projeto
 
@@ -139,6 +152,13 @@ Se este patch foi útil, você pode me apoiar em [buymeacoffee.com/legendaryredf
 Программа определяет версию по SHA-256, проверяет исходные байты каждого патча, а после сборки проверяет, что каждый изменённый байт принадлежит патчу и контрольная сумма заголовка верна. Записываются `... [fixed].gen` и `... [fixed].bin` (одинаковое содержимое; берите расширение, которое показывает меню вашего флеш-картриджа). Язык интерфейса (португальский, английский, русский и китайский) берётся из системы и переключается в окне. Кнопка *Справка* показывает общие инструкции, требования (библиотеки и программы) и список файлов.
 
 **Командная строка:** `java -jar MetalGearPatcher-*.jar --cli ROM [-o ВЫХОД] [--only save,z80,ram] [--force] [--check]`. Код возврата: 0 = успех, 1 = ошибка, 2 = неверное использование. `--force` принимает изменённый дамп (другой хеш), если все проверяемые байты совпадают.
+
+<p align="center">
+  <img src="docs/img/ru-main.png" alt="Интерфейс на русском" width="420">
+  <img src="docs/img/ru-result.png" alt="Интерфейс на русском" width="420">
+</p>
+
+<sub>Скриншоты (сделаны под Xvfb): распознанный ROM v1.1 и результат после применения исправлений.</sub>
 
 ## Что меняется
 
@@ -218,12 +238,19 @@ MG_ROM_DIR=/папка/с/rom ./gradlew :app:desktopTest   включая тес
 ## Структура
 
 ```
+docs/                  анализ v1.1 (v1.1-analise.md, v1.1-analysis.md)
+docs/img/              скриншоты интерфейса
 app/                   программа Kotlin Multiplatform (commonMain: движок, состояние, экран; desktopMain: окно и файлы)
   .../core/            RomPatcher, RomProfiles (таблицы патчей), PatchBlobs (генерируется), Sha256
 patches/               процедуры 68000 (.s), собранные файлы (.bin/.sym) и build_patches.sh
 tests/run_tests.py     тесты поведения ROM;  tests/sim/mgsim.c  минимальный симулятор (Musashi)
 .github/workflows/     CI (Linux, macOS, Windows)
+LICENSE                PolyForm Noncommercial 1.0.0
 ```
+
+## Лицензия
+
+[PolyForm Noncommercial 1.0.0](LICENSE): свободное использование, копирование и изменение в **некоммерческих** целях (личное, учебное, хобби, сохранение наследия, некоммерческие организации). Для коммерческого использования нужно разрешение автора. Полный текст в [LICENSE](LICENSE). Из-за запрета коммерческого использования это не лицензия открытого кода в смысле OSI. Лицензия распространяется только на код этого репозитория; игра и ROM принадлежат их владельцам.
 
 ## Поддержать проект
 
@@ -250,6 +277,13 @@ tests/run_tests.py     тесты поведения ROM;  tests/sim/mgsim.c  м
 程序通过 SHA-256 识别版本，检查每个补丁的原始字节，构建完成后验证每个被改动的字节都属于某个补丁且头部校验和正确。它会写出 `... [fixed].gen` 和 `... [fixed].bin`（内容相同，请使用您的烧录卡菜单所列的扩展名）。界面语言（葡萄牙语、英语、俄语、中文）跟随系统，也可在窗口中切换。“帮助”按钮会显示通用说明、运行要求（库和程序）以及文件列表。
 
 **命令行：** `java -jar MetalGearPatcher-*.jar --cli ROM [-o 输出] [--only save,z80,ram] [--force] [--check]`。退出码 0 = 成功，1 = 错误，2 = 用法错误。`--force` 在所有被检查的字节仍然匹配时接受已修改的转储（哈希不同）。
+
+<p align="center">
+  <img src="docs/img/zh-main.png" alt="简体中文界面" width="420">
+  <img src="docs/img/zh-result.png" alt="简体中文界面" width="420">
+</p>
+
+<sub>截图（在 Xvfb 下生成）：识别出的 v1.1 ROM，以及应用修复后的结果。</sub>
 
 ## 修改内容
 
@@ -330,12 +364,18 @@ MG_ROM_DIR=/存放rom的文件夹 ./gradlew :app:desktopTest   同时运行真�
 
 ```
 docs/                  v1.1 分析（v1.1-analise.md、v1.1-analysis.md）
+docs/img/              界面截图
 app/                   Kotlin Multiplatform 程序（commonMain：引擎、状态、界面；desktopMain：窗口和文件）
   .../core/            RomPatcher、RomProfiles（补丁表）、PatchBlobs（自动生成）、Sha256
 patches/               68000 例程（.s）、汇编结果（.bin/.sym）和 build_patches.sh
 tests/run_tests.py     ROM 行为测试；  tests/sim/mgsim.c  最小模拟器（Musashi）
 .github/workflows/     CI（Linux、macOS、Windows）
+LICENSE                PolyForm Noncommercial 1.0.0
 ```
+
+## 许可证
+
+[PolyForm Noncommercial 1.0.0](LICENSE)：可自由地将本软件用于**非商业**目的（个人、学习、爱好、保存、非营利组织），包括使用、复制和修改。商业使用须获得作者许可。完整文本见 [LICENSE](LICENSE)。由于限制商业使用，它不是 OSI 意义上的开源许可证。许可证只涵盖本仓库的代码；游戏和 ROM 属于其各自的权利人。
 
 ## 支持项目
 
@@ -363,6 +403,13 @@ A program with a graphical interface (and a command-line mode) that applies **re
 The program recognizes the version by SHA-256, checks the original bytes of every patch and, after building, verifies that every changed byte belongs to a patch and that the header checksum is right. It writes `... [fixed].gen` and `... [fixed].bin` (identical contents; use the extension your flashcart menu lists). The interface language (Portuguese, English, Russian and Chinese) follows the system and can be changed in the window. The *Help* button shows general instructions, the requirements (libraries and programs) and the list of files.
 
 **Command line:** `java -jar MetalGearPatcher-*.jar --cli ROM [-o OUTPUT] [--only save,z80,ram] [--force] [--check]`. Exit status 0 = ok, 1 = error, 2 = bad usage. `--force` accepts a modified dump (different hash) when every checked byte still matches.
+
+<p align="center">
+  <img src="docs/img/en-main.png" alt="Interface in English" width="420">
+  <img src="docs/img/en-result.png" alt="Interface in English" width="420">
+</p>
+
+<sub>Screenshots (made under Xvfb): the recognised v1.1 ROM and the result after applying the fixes.</sub>
 
 ## What changes
 
@@ -443,12 +490,18 @@ Applies to the fixed v1.2 (the original passes the same checks); v1.1 passed the
 
 ```
 docs/                  v1.1 analysis (v1.1-analise.md, v1.1-analysis.md)
+docs/img/              screenshots of the interface
 app/                   Kotlin Multiplatform program (commonMain: engine, state, screen; desktopMain: window and files)
   .../core/            RomPatcher, RomProfiles (patch tables), PatchBlobs (generated), Sha256
 patches/               68000 routines (.s), assembled files (.bin/.sym) and build_patches.sh
 tests/run_tests.py     ROM behaviour tests;  tests/sim/mgsim.c  minimal simulator (Musashi)
 .github/workflows/     CI (Linux, macOS, Windows)
+LICENSE                PolyForm Noncommercial 1.0.0
 ```
+
+## License
+
+[PolyForm Noncommercial 1.0.0](LICENSE): free to use, copy and modify for **non-commercial** purposes (personal, study, hobby, preservation, non-profit organisations). Commercial use needs the author's permission. Full text in [LICENSE](LICENSE). Because of the commercial restriction it is not an open source licence in the OSI sense. The licence covers only the code in this repository; the game and the ROMs belong to their owners.
 
 ## Support
 
