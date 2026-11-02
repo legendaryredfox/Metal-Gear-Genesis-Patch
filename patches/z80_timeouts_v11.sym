@@ -1,0 +1,5 @@
+__bss_start 00141f70
+_edata 00141f6e
+_end 00141f70
+flagwait 0013ff42
+wait_busack 0013ff00

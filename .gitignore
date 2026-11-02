@@ -7,3 +7,10 @@
 *.srm
 __pycache__/
 .cache/
+
+# Gradle / Kotlin build output
+build/
+.gradle/
+.kotlin/
+*.jar
+!gradle/wrapper/gradle-wrapper.jar

@@ -1,5 +1,0 @@
-# build_fixed_rom.py uses only the Python standard library (developed and tested on Python 3.11).
-# No pip packages are required, so there is nothing to install here.
-#
-# Optional system tools (only to re-assemble patches/*.s; the committed .bin/.sym files are used otherwise):
-#   sudo apt install binutils-m68k-linux-gnu      # m68k-linux-gnu-as, -ld, -objcopy, -nm
