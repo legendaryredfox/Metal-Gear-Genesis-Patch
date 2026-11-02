@@ -58,7 +58,7 @@ O programa reconhece a versão pelo SHA-256, confere os bytes originais de cada 
 
 ### Outras melhorias verificadas na v1.1
 
-Feitas: as listadas acima. Verificadas e **não** feitas:
+Feitas: as listadas acima. Verificadas e **não** feitas (detalhes, endereços e evidências em [docs/v1.1-analise.md](docs/v1.1-analise.md)):
 
 - 19 leituras de `0xA00160` (fila de comandos do Z80) sem timeout, em formatos diferentes; a v1.2 também as deixou. Exigem um patch por ponto.
 - Variáveis do SGDK (semente do `random()`, contador de ticks, contexto de multitarefa) estão em endereços de ROM (`0x13FE10–0x13FE5A`) e escrever nelas não faz nada. O código que as usa não é chamado em lugar nenhum, então é inofensivo.
@@ -105,6 +105,7 @@ Vale para a v1.2 corrigida (a original passa nas mesmas verificações); a v1.1 
 ## Estrutura
 
 ```
+docs/                  análise da v1.1 (v1.1-analise.md, v1.1-analysis.md)
 app/                   programa Kotlin Multiplatform (commonMain: motor, estado, tela; desktopMain: janela e arquivos)
   .../core/            RomPatcher, RomProfiles (tabelas de patch), PatchBlobs (gerado), Sha256
 patches/               rotinas 68000 (.s), binários montados (.bin/.sym) e build_patches.sh
@@ -170,7 +171,7 @@ Se este patch foi útil, você pode me apoiar em [buymeacoffee.com/legendaryredf
 
 ### Другие проверенные улучшения для v1.1
 
-Сделано: перечисленное выше. Проверено и **не** сделано:
+Сделано: перечисленное выше. Проверено и **не** сделано (подробности, адреса и свидетельства в [docs/v1.1-analysis.md](docs/v1.1-analysis.md), на английском):
 
 - 19 чтений `0xA00160` (очередь команд Z80) без тайм-аута, в разных формах; в v1.2 их тоже оставили. Нужен отдельный патч для каждого места.
 - Переменные SGDK (зерно `random()`, счётчик тиков, контекст многозадачности) лежат по адресам ROM (`0x13FE10–0x13FE5A`), запись в них ничего не делает. Использующий их код нигде не вызывается, поэтому он безвреден.
@@ -281,7 +282,7 @@ tests/run_tests.py     тесты поведения ROM;  tests/sim/mgsim.c  м
 
 ### 在 v1.1 上检查过的其他改进
 
-已完成：上文所列。已检查但**未做**：
+已完成：上文所列。已检查但**未做**（详细地址与证据见 [docs/v1.1-analysis.md](docs/v1.1-analysis.md)，英文）：
 
 - 19 处对 `0xA00160`（Z80 命令队列）的读取没有超时，形式各不相同；v1.2 也没有处理。每处都需要单独的补丁。
 - SGDK 变量（`random()` 种子、节拍计数器、多任务上下文）位于 ROM 地址（`0x13FE10–0x13FE5A`），写入它们没有任何效果。使用它们的代码从未被调用，因此无害。
@@ -328,6 +329,7 @@ MG_ROM_DIR=/存放rom的文件夹 ./gradlew :app:desktopTest   同时运行真�
 ## 目录结构
 
 ```
+docs/                  v1.1 分析（v1.1-analise.md、v1.1-analysis.md）
 app/                   Kotlin Multiplatform 程序（commonMain：引擎、状态、界面；desktopMain：窗口和文件）
   .../core/            RomPatcher、RomProfiles（补丁表）、PatchBlobs（自动生成）、Sha256
 patches/               68000 例程（.s）、汇编结果（.bin/.sym）和 build_patches.sh
@@ -393,7 +395,7 @@ The program recognizes the version by SHA-256, checks the original bytes of ever
 
 ### Other improvements checked on v1.1
 
-Done: those listed above. Checked and **not** done:
+Done: those listed above. Checked and **not** done (details, addresses and evidence in [docs/v1.1-analysis.md](docs/v1.1-analysis.md)):
 
 - 19 reads of `0xA00160` (the Z80 command queue) without a timeout, in different shapes; v1.2 left them too. Each site needs its own patch.
 - SGDK variables (the `random()` seed, a tick counter, the multitasking context) sit at ROM addresses (`0x13FE10–0x13FE5A`), so writing to them does nothing. The code that uses them is never called, so it is harmless.
@@ -440,6 +442,7 @@ Applies to the fixed v1.2 (the original passes the same checks); v1.1 passed the
 ## Layout
 
 ```
+docs/                  v1.1 analysis (v1.1-analise.md, v1.1-analysis.md)
 app/                   Kotlin Multiplatform program (commonMain: engine, state, screen; desktopMain: window and files)
   .../core/            RomPatcher, RomProfiles (patch tables), PatchBlobs (generated), Sha256
 patches/               68000 routines (.s), assembled files (.bin/.sym) and build_patches.sh
